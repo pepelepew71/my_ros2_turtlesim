@@ -5,7 +5,6 @@ import random
 
 import rclpy
 from rclpy.node import Node
-from turtlesim import srv
 
 from turtlesim.msg import Pose
 from geometry_msgs.msg import Twist
@@ -43,6 +42,8 @@ class Turtle:
 
 class Tracking(Node):
 
+    SPAWN_DISTANCE = 0.25
+
     def __init__(self):
         super().__init__(node_name="target_generator")
         self.get_logger().info(message="target_generator start")
@@ -63,7 +64,7 @@ class Tracking(Node):
 
     def _cb_turtle1_pose(self, msg):
         dist = self.turtle.get_distance_to(x=msg.x, y=msg.y)
-        if dist < 0.5:
+        if dist < __class__.SPAWN_DISTANCE:
             req = Kill.Request()
             req.name = "turtle"+str(self.turtle.num)
             self.srv_client_kill.call_async(request=req)
@@ -71,9 +72,15 @@ class Tracking(Node):
             self.turtle.spawn()
         else:
             twist = Twist()
-            twist.linear.x = 2.0 if dist > 2.0 else dist
-            twist.angular.z = - ((msg.theta - math.atan2(self.turtle.y - msg.y, self.turtle.x - msg.x)))
-            self.get_logger().info(f'{twist.linear.x}, {twist.angular.z}')
+            twist.linear.x = 1.0 if dist < 2.0 else dist / 2.0  # speed up
+            twist.angular.z = (math.atan2(self.turtle.y - msg.y, self.turtle.x - msg.x) - msg.theta)
+            if twist.angular.z > math.pi:
+                twist.angular.z -= 2.0*math.pi
+            elif twist.angular.z < -math.pi:
+                twist.angular.z += 2.0*math.pi
+            else:
+                pass
+            twist.angular.z *= 2.0  # speed up
             self.pub_turtle1_cmdvel.publish(msg=twist)
 
 
