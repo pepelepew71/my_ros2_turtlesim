@@ -23,7 +23,7 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            "target_node = my_ros2_turtlesim.target:main",
+            "tracking = my_ros2_turtlesim.tracking:main",
         ],
     },
 )
